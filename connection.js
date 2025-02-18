@@ -1,7 +1,7 @@
 const {Sequelize} = require('sequelize');
 
-const sequelize = new Sequelize('royal_travel','root','',{
-    host: 'localhost',
+const sequelize = new Sequelize('pwa','royal_umrah','SPSRA8r2kfRz02tnBAwi',{
+    host: 'database-umrah-99.ch26co64cgxa.ap-south-1.rds.amazonaws.com',
     dialect: 'mysql'
 });
 

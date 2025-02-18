@@ -18,6 +18,15 @@ const User = sequelize.define(
         },
       },
     },
+    fatherName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: "FatherName cannot be empty",
+        },
+      },
+    },
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -32,6 +41,10 @@ const User = sequelize.define(
     city: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    pincode: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     status: {
       type: DataTypes.ENUM("confirmed", "canceled", "pending"),

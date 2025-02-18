@@ -32,7 +32,7 @@ const generateReceiptId = () => {
 //       <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 //       <style>
 //           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          
+
 //           :root {
 //               --primary: #6366f1;
 //               --primary-light: #818cf8;
@@ -42,13 +42,13 @@ const generateReceiptId = () => {
 //               --card: #ffffff;
 //               --border: #e5e7eb;
 //           }
-  
+
 //           * {
 //               margin: 0;
 //               padding: 0;
 //               box-sizing: border-box;
 //           }
-  
+
 //           body {
 //               font-family: 'Inter', sans-serif;
 //               background: var(--background);
@@ -60,7 +60,7 @@ const generateReceiptId = () => {
 //               padding: 2rem;
 //               line-height: 1.5;
 //           }
-  
+
 //           .invoice-container {
 //               max-width: 800px;
 //               width: 100%;
@@ -69,7 +69,7 @@ const generateReceiptId = () => {
 //               box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 //               padding: 2.5rem;
 //           }
-  
+
 //           .header {
 //               display: flex;
 //               justify-content: space-between;
@@ -78,45 +78,45 @@ const generateReceiptId = () => {
 //               padding-bottom: 1.5rem;
 //               border-bottom: 2px solid var(--border);
 //           }
-  
+
 //           .logo-section {
 //               display: flex;
 //               align-items: center;
 //               gap: 1rem;
 //           }
-  
+
 //           .logo-section i {
 //               font-size: 2.5rem;
 //               color: var(--primary);
 //           }
-  
+
 //           .invoice-info {
 //               text-align: right;
 //               color: var(--text-secondary);
 //           }
-  
+
 //           .invoice-info p {
 //               margin: 0.25rem 0;
 //               font-size: 0.875rem;
 //           }
-  
+
 //           .invoice-info strong {
 //               color: var(--text-primary);
 //               font-weight: 600;
 //           }
-  
+
 //           .table-container {
 //               margin: 2rem 0;
 //               border-radius: 12px;
 //               overflow: hidden;
 //               border: 1px solid var(--border);
 //           }
-  
+
 //           .invoice-table {
 //               width: 100%;
 //               border-collapse: collapse;
 //           }
-  
+
 //           .invoice-table th {
 //               background: var(--primary);
 //               color: white;
@@ -127,29 +127,29 @@ const generateReceiptId = () => {
 //               padding: 1rem;
 //               text-align: left;
 //           }
-  
+
 //           .invoice-table td {
 //               padding: 1rem;
 //               border-bottom: 1px solid var(--border);
 //               color: var(--text-secondary);
 //               font-size: 0.875rem;
 //           }
-  
+
 //           .invoice-table tr:last-child td {
 //               border-bottom: none;
 //           }
-  
+
 //           .invoice-table tbody tr:hover {
 //               background: #f8fafc;
 //           }
-  
+
 //           .total-section {
 //               margin-top: 2rem;
 //               padding-top: 1.5rem;
 //               border-top: 2px solid var(--border);
 //               text-align: right;
 //           }
-  
+
 //           .total-row {
 //               display: flex;
 //               justify-content: flex-end;
@@ -159,7 +159,7 @@ const generateReceiptId = () => {
 //               font-size: 0.875rem;
 //               color: var(--text-secondary);
 //           }
-  
+
 //           .total-row.final {
 //               margin-top: 1rem;
 //               padding-top: 1rem;
@@ -168,12 +168,12 @@ const generateReceiptId = () => {
 //               font-weight: 600;
 //               color: var(--primary);
 //           }
-  
+
 //           .total-label {
 //               font-weight: 500;
 //               color: var(--text-primary);
 //           }
-  
+
 //           .badge {
 //               background: #dbeafe;
 //               color: #2563eb;
@@ -200,7 +200,7 @@ const generateReceiptId = () => {
 //                   <p><strong>Order ID:</strong> <span class="badge">${orderId}</span></p>
 //               </div>
 //           </div>
-  
+
 //           <div class="table-container">
 //               <table class="invoice-table">
 //                   <thead>
@@ -225,7 +225,7 @@ const generateReceiptId = () => {
 //                   </tbody>
 //               </table>
 //           </div>
-  
+
 //           <div class="total-section">
 //               <div class="total-row">
 //                   <span class="total-label">Net Total</span>
@@ -275,7 +275,7 @@ const generateReceiptId = () => {
 
 const order = async (req, res) => {
   try {
-    const { amt, name, phoneNumber, city } = req.body;
+    const { amt, name, phoneNumber, fatherName, pincode, city } = req.body;
 
     // Validate required fields
     if (!name || !phoneNumber || !amt || !city) {
@@ -283,6 +283,8 @@ const order = async (req, res) => {
         message: "Missing required fields",
         name,
         phoneNumber,
+        fatherName,
+        pincode,
         amt,
         city,
       });
@@ -322,6 +324,8 @@ const order = async (req, res) => {
     const newUser = await User.create({
       name,
       phoneNumber,
+      fatherName,
+      pincode,
       city,
       amount: JSON.parse(amt),
       paymentStatus: "pending", // Default to pending

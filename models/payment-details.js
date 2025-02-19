@@ -56,7 +56,7 @@ const PaymentDetails = sequelize.define(
 
 (async () => {
   try {
-    await PaymentDetails.sync({ force: false });
+    await PaymentDetails.sync({ force: true });
     console.log("The table for the PaymentDetails model was just (re)created!");
   } catch (error) {
     console.error("Error syncing the PaymentDetails model:", error);

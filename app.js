@@ -23,6 +23,7 @@ const adminRoutes = require('./routes/adminRoutes')
 
 //Import User Routes
 const userRoutes = require('./routes/userRoutes')
+const winnerRoutes = require('./routes/umrahwinnerRoutes')
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -118,6 +119,9 @@ app.use('/admin',adminRoutes)
 
 //user
 app.use('/user',userRoutes)
+
+//open
+app.use('/users',winnerRoutes)
 
 // 404 Handler
 app.use((req, res, next) => {

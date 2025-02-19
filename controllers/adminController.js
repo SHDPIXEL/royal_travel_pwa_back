@@ -156,6 +156,53 @@ const getAllPayments = async (req, res) => {
   }
 };
 
+//{paymentGraph}
+async function getPaymentsGraph(req, res) {
+  try {
+    // Get the current date
+    const today = moment().startOf("day");
+    const sevenDaysAgo = moment(today).subtract(6, "days");
+
+    // Fetch payment records created in the last 7 days, including today
+    const payments = await PaymentDetails.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [sevenDaysAgo.toDate(), today.endOf("day").toDate()],
+        },
+      },
+      attributes: ["createdAt"], // Fetch only the creation date of payments
+    });
+
+    // Initialize an array with all the dates for the last 7 days
+    const dateCounts = Array.from({ length: 7 }, (_, i) => {
+      const date = moment(sevenDaysAgo).add(i, "days");
+      return {
+        date: date.format("YYYY-MM-DD"), // Format the date as a string
+        paymentCount: 0, // Initial payment count is zero
+      };
+    });
+
+    // Count payments for each day
+    payments.forEach((payment) => {
+      const paymentDate = moment(payment.createdAt).format("YYYY-MM-DD");
+      const dayEntry = dateCounts.find((entry) => entry.date === paymentDate);
+      if (dayEntry) {
+        dayEntry.paymentCount += 1; // Increment payment count
+      }
+    });
+
+    // Respond with the data
+    res.status(200).json({
+      message: "Payments data for the last 7 days",
+      data: dateCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching payments graph data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
 //{users}
 const getAllUsers = async (req, res) => {
   try {
@@ -176,6 +223,55 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: "An error occurred while fetching users.", error: error.message });
   }
 };
+
+
+//{usersGraph}
+async function getUsersGraph(req, res) {
+  try {
+    // Get the current date
+    const today = moment().startOf("day");
+    const sevenDaysAgo = moment(today).subtract(6, "days");
+
+    // Fetch users created in the last 7 days, including today
+    const users = await User.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [sevenDaysAgo.toDate(), today.endOf("day").toDate()],
+        },
+      },
+      attributes: ["createdAt"], // Fetch only the creation date
+    });
+
+    // Initialize an array with all the dates for the last 7 days
+    const dateCounts = Array.from({ length: 7 }, (_, i) => {
+      const date = moment(sevenDaysAgo).add(i, "days");
+      return {
+        date: date.format("YYYY-MM-DD"), // Format the date as a string
+        userCount: 0, // Initial user count is zero
+      };
+    });
+
+    // Count users for each day
+    users.forEach((user) => {
+      const userDate = moment(user.createdAt).format("YYYY-MM-DD");
+      const dayEntry = dateCounts.find((entry) => entry.date === userDate);
+      if (dayEntry) {
+        dayEntry.userCount += 1; // Increment user count
+      }
+    });
+
+    // Respond with the data
+    res.status(200).json({
+      message: "Users data for the last 7 days",
+      data: dateCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching users graph data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
 module.exports = {
   createUmrahhWinner,//{UmrahhWinner}
   getAllUmrahhWinners,
@@ -183,5 +279,7 @@ module.exports = {
   updateUmrahhWinner,
   deleteUmrahhWinner,
   getAllPayments,//{paymentDetails}
+  getPaymentsGraph,
   getAllUsers,//{users}
+  getUsersGraph
 };

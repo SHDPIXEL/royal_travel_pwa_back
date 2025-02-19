@@ -8,7 +8,9 @@ const {
   updateUmrahhWinner,
   deleteUmrahhWinner,
   getAllPayments,//{paymentDetails}
+  getPaymentsGraph,
   getAllUsers,//{users}
+  getUsersGraph,
 } = require("../controllers/adminController"); // Import the controller
 
 router.use(verifyAdminToken);
@@ -33,10 +35,12 @@ router.delete("/umrahh-winner/:id", deleteUmrahhWinner);
 //{paymentDetails}
 // Route to get all paymentDetails
 router.get("/payments", getAllPayments);
+router.get("/payment-details/graph", getPaymentsGraph);
 
 //{users}
 // Route to get all paymentDetails
 router.get("/users", getAllUsers);
+router.get("/user-details/graph", getUsersGraph);
 
 
 module.exports = router;

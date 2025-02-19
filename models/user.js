@@ -68,7 +68,7 @@ const User = sequelize.define(
   { timestamps: true }
 );
 
-User.sync({ force: true });
+User.sync({ force: false });
 console.log("The table for the Admin model was just (re)created!");
 
 module.exports = User;

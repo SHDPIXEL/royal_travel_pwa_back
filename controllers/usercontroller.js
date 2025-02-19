@@ -6,12 +6,13 @@ const PaymentDetails = require("../models/payment-details");
 const { or } = require("sequelize");
 const twilio = require("twilio");
 const puppeteer = require("puppeteer");
+const moment = require("moment"); 
 
 // Twilio client for sending WhatsApp messages
-const client = new twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+// const client = new twilio(
+//   process.env.TWILIO_ACCOUNT_SID,
+//   process.env.TWILIO_AUTH_TOKEN
+// );
 
 const generateReceiptId = () => {
   const randomNumbers = crypto.randomBytes(4).toString("hex"); // Generates a random 8-character hex string
@@ -19,240 +20,281 @@ const generateReceiptId = () => {
 };
 
 // // Generate PDF Invoice
-// const generatePdf = async (invoiceDetails) => {
-//   const { name, amount, orderId, transactionId, city,phoneNumber } = invoiceDetails;
+const generatePdf = async (invoiceDetails) => {
+  const {
+    name,
+    amount,
+    orderId,
+    transactionId,
+    city,
+    phoneNumber,
+    invoiceDate,
+  } = invoiceDetails;
 
-//   const htmlContent = `
-//   <!DOCTYPE html>
-//   <html lang="en">
-//   <head>
-//       <meta charset="UTF-8">
-//       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//       <title>Modern Invoice</title>
-//       <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-//       <style>
-//           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  const htmlContent = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Modern Invoice</title>
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+      <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-//           :root {
-//               --primary: #6366f1;
-//               --primary-light: #818cf8;
-//               --text-primary: #1f2937;
-//               --text-secondary: #6b7280;
-//               --background: #f9fafb;
-//               --card: #ffffff;
-//               --border: #e5e7eb;
-//           }
+          :root {
+              --primary: #f7951f;
+              --primary-light: #818cf8;
+              --text-primary: #1f2937;
+              --text-secondary: #6b7280;
+              --background: #f9fafb;
+              --card: #ffffff;
+              --border: #e5e7eb;
+          }
 
-//           * {
-//               margin: 0;
-//               padding: 0;
-//               box-sizing: border-box;
-//           }
+          * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+          }
 
-//           body {
-//               font-family: 'Inter', sans-serif;
-//               background: var(--background);
-//               min-height: 100vh;
-//               display: flex;
-//               justify-content: center;
-//               align-items: center;
-//               color: var(--text-primary);
-//               padding: 2rem;
-//               line-height: 1.5;
-//           }
+          body {
+              font-family: 'Inter', sans-serif;
+              background: var(--background);
+              min-height: 100vh;
+              display: flex;
+              justify-content: center;
+              color: var(--text-primary);
+              padding: 2rem;
+              line-height: 1.5;
+          }
 
-//           .invoice-container {
-//               max-width: 800px;
-//               width: 100%;
-//               background: var(--card);
-//               border-radius: 16px;
-//               box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-//               padding: 2.5rem;
-//           }
+          .invoice-container {
+              max-width: 800px;
+              width: 100%;
+              background: var(--card);
+              padding: 2.5rem;
+          }
 
-//           .header {
-//               display: flex;
-//               justify-content: space-between;
-//               align-items: center;
-//               margin-bottom: 2.5rem;
-//               padding-bottom: 1.5rem;
-//               border-bottom: 2px solid var(--border);
-//           }
+          /* Header Layout */
+          .header {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              margin-bottom: 2.5rem;
+              padding-bottom: 1.5rem;
+              border-bottom: 2px solid var(--border);
+          }
 
-//           .logo-section {
-//               display: flex;
-//               align-items: center;
-//               gap: 1rem;
-//           }
+          .logo-section {
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              margin-bottom: 1rem; /* Space below logo */
+          }
 
-//           .logo-section i {
-//               font-size: 2.5rem;
-//               color: var(--primary);
-//           }
+          .logo-section i {
+              font-size: 2.5rem;
+              color: var(--primary);
+          }
 
-//           .invoice-info {
-//               text-align: right;
-//               color: var(--text-secondary);
-//           }
+          /* User Info & Invoice Info Layout */
+          .info-container {
+              display: flex;
+              justify-content: space-between;
+              width: 100%;
+          }
 
-//           .invoice-info p {
-//               margin: 0.25rem 0;
-//               font-size: 0.875rem;
-//           }
+          .user-info {
+              flex: 1;
+              color: var(--text-primary);
+          }
 
-//           .invoice-info strong {
-//               color: var(--text-primary);
-//               font-weight: 600;
-//           }
+          .user-info p {
+              margin: 0.25rem 0;
+              font-size: 0.875rem;
+          }
 
-//           .table-container {
-//               margin: 2rem 0;
-//               border-radius: 12px;
-//               overflow: hidden;
-//               border: 1px solid var(--border);
-//           }
+          .user-info strong {
+              font-weight: 600;
+              color: var(--text-secondary);
+          }
 
-//           .invoice-table {
-//               width: 100%;
-//               border-collapse: collapse;
-//           }
+          .invoice-info {
+              text-align: right;
+              color: var(--text-secondary);
+          }
 
-//           .invoice-table th {
-//               background: var(--primary);
-//               color: white;
-//               font-weight: 500;
-//               text-transform: uppercase;
-//               font-size: 0.75rem;
-//               letter-spacing: 0.05em;
-//               padding: 1rem;
-//               text-align: left;
-//           }
+          .invoice-info p {
+              margin: 0.25rem 0;
+              font-size: 0.875rem;
+          }
 
-//           .invoice-table td {
-//               padding: 1rem;
-//               border-bottom: 1px solid var(--border);
-//               color: var(--text-secondary);
-//               font-size: 0.875rem;
-//           }
+          .invoice-info strong {
+              color: var(--text-primary);
+              font-weight: 600;
+          }
 
-//           .invoice-table tr:last-child td {
-//               border-bottom: none;
-//           }
+          .table-container {
+              margin: 2rem 0;
+              border-radius: 12px;
+              overflow: hidden;
+              border: 1px solid var(--border);
+          }
 
-//           .invoice-table tbody tr:hover {
-//               background: #f8fafc;
-//           }
+          .invoice-table {
+              width: 100%;
+              border-collapse: collapse;
+          }
 
-//           .total-section {
-//               margin-top: 2rem;
-//               padding-top: 1.5rem;
-//               border-top: 2px solid var(--border);
-//               text-align: right;
-//           }
+          .invoice-table th {
+              background: var(--primary);
+              color: white;
+              font-weight: 500;
+              text-transform: uppercase;
+              font-size: 0.75rem;
+              letter-spacing: 0.05em;
+              padding: 1rem;
+              text-align: left;
+          }
 
-//           .total-row {
-//               display: flex;
-//               justify-content: flex-end;
-//               align-items: center;
-//               gap: 4rem;
-//               margin-bottom: 0.5rem;
-//               font-size: 0.875rem;
-//               color: var(--text-secondary);
-//           }
+          .invoice-table td {
+              padding: 1rem;
+              border-bottom: 1px solid var(--border);
+              color: var(--text-secondary);
+              font-size: 0.875rem;
+          }
 
-//           .total-row.final {
-//               margin-top: 1rem;
-//               padding-top: 1rem;
-//               border-top: 1px solid var(--border);
-//               font-size: 1.25rem;
-//               font-weight: 600;
-//               color: var(--primary);
-//           }
+          .invoice-table tr:last-child td {
+              border-bottom: none;
+          }
 
-//           .total-label {
-//               font-weight: 500;
-//               color: var(--text-primary);
-//           }
+          .total-section {
+              margin-top: 2rem;
+              padding-top: 1.5rem;
+              border-top: 2px solid var(--border);
+              text-align: right;
+          }
 
-//           .badge {
-//               background: #dbeafe;
-//               color: #2563eb;
-//               padding: 0.25rem 0.75rem;
-//               border-radius: 9999px;
-//               font-size: 0.75rem;
-//               font-weight: 500;
-//           }
-//       </style>
-//   </head>
-//   <body>
-//       <div class="invoice-container">
-//           <div class="header">
-//               <div class="logo-section">
-//                   <i class="fas fa-building"></i>
-//                   <div>
-//                       <h2 style="font-weight: 600;">ACME Inc.</h2>
-//                       <span style="color: var(--text-secondary); font-size: 0.875rem;">Business Solutions</span>
-//                   </div>
-//               </div>
-//               <div class="invoice-info">
-//                   <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
-//                   <p><strong>Invoice Time:</strong> ${invoiceTime}</p>
-//                   <p><strong>Order ID:</strong> <span class="badge">${orderId}</span></p>
-//               </div>
-//           </div>
+          .total-row {
+              display: flex;
+              justify-content: flex-end;
+              align-items: center;
+              gap: 4rem;
+              margin-bottom: 0.5rem;
+              font-size: 0.875rem;
+              color: var(--text-secondary);
+          }
 
-//           <div class="table-container">
-//               <table class="invoice-table">
-//                   <thead>
-//                       <tr>
-//                           <th>#</th>
-//                           <th>Product Details</th>
-//                           <th>Price</th>
-//                           <th>Qty.</th>
-//                           <th>Tax</th>
-//                           <th>Total</th>
-//                       </tr>
-//                   </thead>
-//                   <tbody>
-//                       <tr>
-//                           <td>1</td>
-//                           <td>Monthly Accounting Services</td>
-//                           <td>₹${amount}</td>
-//                           <td>1</td>
-//                           <td>20%</td>
-//                           <td>₹${totalAmount}</td>
-//                       </tr>
-//                   </tbody>
-//               </table>
-//           </div>
+          .total-row.final {
+              margin-top: 1rem;
+              padding-top: 1rem;
+              font-size: 1.25rem;
+              font-weight: 600;
+              color: var(--primary);
+          }
 
-//           <div class="total-section">
-//               <div class="total-row">
-//                   <span class="total-label">Net Total</span>
-//                   <span>₹${amount}</span>
-//               </div>
-//               <div class="total-row">
-//                   <span class="total-label">VAT Total</span>
-//                   <span>₹${tax}</span>
-//               </div>
-//               <div class="total-row final">
-//                   <span class="total-label">Total to Pay</span>
-//                   <span>₹${totalAmount}</span>
-//               </div>
-//           </div>
-//       </div>
-//   </body>
-//   </html>
-//   `;
+          .total-label {
+              font-weight: 500;
+              color: var(--text-primary);
+          }
 
-//   const browser = await puppeteer.launch();
-//   const page = await browser.newPage();
-//   await page.setContent(htmlContent);
-//   const pdfBuffer = await page.pdf({ format: "A4" });
-//   await browser.close();
+          .badge {
+              color: #f7951f;
+              padding: 0.25rem 0.75rem;
+              border-radius: 9999px;
+              font-size: 0.75rem;
+              font-weight: 500;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="invoice-container">
+          <div class="header">
+              <!-- Logo Section -->
+              <div class="logo-section">
+                  <div>
+                      <h2 style="font-weight: 600;">Royal <br></h2>
+                      <span style="font-weight: 600;">Hajj & Umrah</span>
+                  </div>
+              </div>
 
-//   return pdfBuffer;
-// };
+              <!-- User Info & Invoice Info Side by Side -->
+              <div class="info-container">
+                  <div class="user-info">
+                      <p><strong>Name:</strong> ${name}</p>
+                      <p><strong>City:</strong> ${city}</p>
+                      <p><strong>Phone-Number:</strong> ${phoneNumber}</p>
+                  </div>
+
+                  <div class="invoice-info">
+                      <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
+                      <p><strong>Order ID:</strong> <span class="badge">${orderId}</span></p>
+                      <p><strong>Transaction ID:</strong> <span class="badge">${transactionId}</span></p>
+                  </div>
+              </div>
+          </div>
+
+          <div class="table-container">
+              <table class="invoice-table">
+                  <thead>
+                      <tr>
+                          <th>#</th>
+                          <th>Description</th>
+                          <th>Price</th>
+                          <th>Qty.</th>
+                          <th>Tax</th>
+                          <th>Total</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td>1</td>
+                          <td>Umrah Premium Package</td>
+                          <td>₹${amount}</td>
+                          <td>1</td>
+                          <td>0%</td>
+                          <td>₹${amount}</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+
+          <div class="total-section">
+              <div class="total-row final">
+                  <span class="total-label">Total Paid Amount</span>
+                  <span>₹${amount}</span>
+              </div>
+          </div>
+      </div>
+  </body>
+  </html>
+  `;
+
+  try {
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+
+    // Set viewport to ensure proper rendering
+    await page.setViewport({ width: 800, height: 1000 });
+
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+    // Generate PDF with defined margins to avoid excessive space
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
+    });
+
+    await browser.close();
+
+    return pdfBuffer;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw new Error("Failed to generate PDF");
+  }
+};
 
 // // Send WhatsApp message with the invoice PDF
 // const sendWhatsAppMessage = async (to, pdfBuffer) => {
@@ -378,19 +420,6 @@ const orderSuccess = async (req, res) => {
 
     await userData.save();
 
-    // // Generate PDF invoice
-    // const invoiceDetails = {
-    //   name: userData.name,
-    //   amount: amount / 100, // Convert from paise to INR
-    //   orderId: razorpayOrderId,
-    //   transactionId: razorpayPaymentId,
-    // };
-
-    // const pdfBuffer = await generatePdf(invoiceDetails);
-
-    // // Send the invoice to the user via WhatsApp
-    // await sendWhatsAppMessage(userData.phoneNumber, pdfBuffer);
-
     // Create a new entry in the PaymentDetails table
     const newPayment = await PaymentDetails.create({
       userId: userData.id, // Foreign key to the BookingDetails table
@@ -401,6 +430,21 @@ const orderSuccess = async (req, res) => {
       paymentDate: new Date(),
       remarks: "Payment verified successfully",
     });
+
+    // // Generate PDF invoice
+    // const invoiceDetails = {
+    //   name: userData.name,
+    //   city: userData.city,
+    //   phoneNumber: userData.phoneNumber,
+    //   amount: amount / 100, // Convert from paise to INR
+    //   orderId: razorpayOrderId,
+    //   transactionId: razorpayPaymentId,
+    // };
+
+    // const pdfBuffer = await generatePdf(invoiceDetails); // Generate PDF
+
+    // // Send the invoice to the user via WhatsApp
+    // await sendWhatsAppMessage(userData.phoneNumber, pdfBuffer);
 
     res.status(200).json({
       // Respond with success message
@@ -418,7 +462,66 @@ const orderSuccess = async (req, res) => {
   }
 };
 
+const generateInvoice = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Fetch payment details
+    const paymentDetails = await PaymentDetails.findOne({ where: { orderId } });
+    if (!paymentDetails) {
+      return res.status(404).json({ message: "Payment details not found" });
+    }
+
+    // Fetch user details
+    const userData = await User.findOne({
+      where: { id: paymentDetails.userId },
+    });
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate the current date in DD-MM-YYYY format
+    const invoiceDate = moment().format("DD-MM-YYYY");
+
+    // Prepare invoice data
+    const invoiceDetails = {
+      name: userData.name,
+      city: userData.city,
+      phoneNumber: userData.phoneNumber,
+      amount: paymentDetails.amount,
+      orderId: paymentDetails.orderId,
+      transactionId: paymentDetails.transactionId,
+      invoiceDate,
+    };
+
+    // Generate PDF invoice
+    const pdfBuffer = await generatePdf(invoiceDetails);
+
+    // Check if PDF buffer is valid
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      return res.status(500).json({ message: "Error generating PDF" });
+    }
+
+    console.log("PDF Size:", pdfBuffer.length); // Debugging
+
+    // Set response headers for PDF download
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=invoice_${orderId}.pdf`,
+      "Content-Length": pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer); // Send PDF as response
+  } catch (error) {
+    console.error("Error:", error);
+    res
+      .status(500)
+      .send(error.message || "An error occurred while generating the invoice.");
+  }
+};
+
 module.exports = {
   order,
   orderSuccess,
+  generateInvoice
 };

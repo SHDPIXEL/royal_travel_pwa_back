@@ -1,5 +1,6 @@
 const express = require('express');
-const {order, orderSuccess } = require('../controllers/usercontroller');
+const {order, orderSuccess,generateInvoice } = require('../controllers/usercontroller');
+// add generateInvoice above before running api 
 
 const router = express.Router();
 
@@ -7,6 +8,7 @@ const router = express.Router();
 
 router.post('/payment/order',order)
 router.post('/payment/success',orderSuccess)
+router.get("/invoice/:orderId", generateInvoice); // New invoice API
 
 
 module.exports = router;

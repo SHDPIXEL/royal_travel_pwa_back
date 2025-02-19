@@ -11,6 +11,7 @@ const {
   getPaymentsGraph,
   getAllUsers,//{users}
   getUsersGraph,
+  generateInvoice,//{invoice}
 } = require("../controllers/adminController"); // Import the controller
 
 router.use(verifyAdminToken);
@@ -41,6 +42,10 @@ router.get("/payment-details/graph", getPaymentsGraph);
 // Route to get all paymentDetails
 router.get("/users", getAllUsers);
 router.get("/user-details/graph", getUsersGraph);
+
+//{invoice}
+//download invoice
+router.get("/invoice/:orderId", generateInvoice); // New invoice API
 
 
 module.exports = router;

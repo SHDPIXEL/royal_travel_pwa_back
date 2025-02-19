@@ -1,6 +1,7 @@
 const UmrahhWinner = require("../models/umrahhWinners"); // Import the UmrahhWinner model
 const PaymentDetails = require("../models/payment-details"); // Adjust the path to your model
 const User = require("../models/user");
+const { Op } = require('sequelize');
 const moment = require('moment');
 
 //{UmrahhWinner}

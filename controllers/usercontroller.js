@@ -7,7 +7,6 @@ const { or } = require("sequelize");
 const twilio = require("twilio");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
-const chromium = require('chrome-aws-lambda')
 
 // Twilio client for sending WhatsApp messages
 // const client = new twilio(
@@ -274,9 +273,8 @@ const generatePdf = async (invoiceDetails) => {
 
   try {
     const browser = await puppeteer.launch({
-      headless: chromium.headless,
-      executablePath: await chromium.executablePath,
-      args: chromium.args
+      headless: "new",
+      args: ["--no-sandbox"],
     });
     const page = await browser.newPage();
 

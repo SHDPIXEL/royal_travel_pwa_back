@@ -6,7 +6,7 @@ const PaymentDetails = require("../models/payment-details");
 const { or } = require("sequelize");
 const twilio = require("twilio");
 const puppeteer = require("puppeteer");
-const moment = require("moment"); 
+const moment = require("moment");
 
 // Twilio client for sending WhatsApp messages
 // const client = new twilio(
@@ -332,6 +332,14 @@ const order = async (req, res) => {
       });
     }
 
+    // Validate pincode (must be exactly 6 digits)
+    const pincodeRegex = /^\d{6}$/;
+    if (pincode && !pincodeRegex.test(pincode)) {
+      return res.status(400).json({
+        message: "Invalid pincode. It should be exactly 6 digits.",
+      });
+    }
+
     // Check if phone number already exists
     const existingUser = await User.findOne({ where: { phoneNumber } });
     if (existingUser) {
@@ -523,5 +531,5 @@ const generateInvoice = async (req, res) => {
 module.exports = {
   order,
   orderSuccess,
-  generateInvoice
+  generateInvoice,
 };

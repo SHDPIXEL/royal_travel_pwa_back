@@ -4,7 +4,6 @@ const User = require("../models/user");
 const { Op } = require("sequelize");
 const moment = require("moment");
 const puppeteer = require("puppeteer");
-const chromium = require('chrome-aws-lambda')
 
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {
@@ -259,11 +258,7 @@ const generatePdf = async (invoiceDetails) => {
   `;
 
   try {
-    const browser = await puppeteer.launch({
-      headless: chromium.headless,
-      executablePath: await chromium.executablePath,
-      args: chromium.args,
-    });
+    const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
 
     // Set viewport to ensure proper rendering

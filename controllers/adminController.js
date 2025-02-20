@@ -258,7 +258,7 @@ const generatePdf = async (invoiceDetails) => {
   `;
 
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({ headless: "new",args:['--no-sandbox'] });
     const page = await browser.newPage();
 
     // Set viewport to ensure proper rendering

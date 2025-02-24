@@ -343,8 +343,15 @@ const order = async (req, res) => {
       });
     }
 
-    // Check if phone number already exists
-    const existingUser = await User.findOne({ where: { phoneNumber } });
+    // Check if phone number already exists with "paid" and "confirmed" status
+    const existingUser = await User.findOne({
+      where: {
+        phoneNumber,
+        paymentStatus: "paid",
+        status: "confirmed",
+      },
+    });
+
     if (existingUser) {
       return res.status(400).json({
         message: "This phone number has already been submitted.",

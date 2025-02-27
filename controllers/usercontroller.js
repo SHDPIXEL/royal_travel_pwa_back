@@ -3,20 +3,86 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const User = require("../models/user");
 const PaymentDetails = require("../models/payment-details");
-const { or } = require("sequelize");
-const twilio = require("twilio");
+const axios = require("axios"); // For API requests
+const fs = require("fs"); // For handling files
+const path = require("path"); // For file paths
+const FormData = require("form-data"); // For file upload
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 
-// Twilio client for sending WhatsApp messages
-// const client = new twilio(
-//   process.env.TWILIO_ACCOUNT_SID,
-//   process.env.TWILIO_AUTH_TOKEN
-// );
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // Replace with your actual access token
+const WHATSAPP_PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 const generateReceiptId = () => {
   const randomNumbers = crypto.randomBytes(4).toString("hex"); // Generates a random 8-character hex string
   return `receipt_umrahh_${randomNumbers}`;
+};
+
+// Upload the PDF to Meta's WhatsApp API and get a media ID
+const uploadPdfToWhatsApp = async (pdfBuffer) => {
+  try {
+    const filePath = path.join(__dirname, "invoice.pdf");
+    fs.writeFileSync(filePath, pdfBuffer);
+
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(filePath));
+    formData.append("messaging_product", "whatsapp");
+    formData.append("type", "application/pdf");
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/media`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${META_ACCESS_TOKEN}`,
+          ...formData.getHeaders(),
+        },
+      }
+    );
+
+    console.log("Media Uploaded:", response.data);
+    return response.data.id; // Media ID from WhatsApp
+  } catch (error) {
+    console.error(
+      "Error uploading PDF to WhatsApp:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to upload PDF to WhatsApp.");
+  }
+};
+
+// Send WhatsApp Message with the PDF
+const sendWhatsAppPdf = async (phoneNumber, mediaId) => {
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "document",
+      document: {
+        id: mediaId,
+        filename: "Invoice.pdf",
+      },
+    };
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${META_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
+    console.log("WhatsApp PDF Sent:", response.data);
+  } catch (error) {
+    console.error(
+      "Error sending WhatsApp PDF:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to send WhatsApp message.");
+  }
 };
 
 // // Generate PDF Invoice
@@ -299,25 +365,6 @@ const generatePdf = async (invoiceDetails) => {
   }
 };
 
-// // Send WhatsApp message with the invoice PDF
-// const sendWhatsAppMessage = async (to, pdfBuffer) => {
-//   try {
-//     // Save PDF to a server (you can host this on AWS S3 or your own server)
-//     const mediaUrl = "https://yourdomain.com/invoice.pdf"; // You should upload this PDF to your server
-
-//     await client.messages.create({
-//       body: "Here is your invoice.",
-//       from: "whatsapp:+14155238886", // Twilio WhatsApp sandbox number or your own
-//       to: `whatsapp:${to}`,
-//       mediaUrl: [mediaUrl], // PDF file URL
-//     });
-
-//     console.log("Invoice sent successfully via WhatsApp");
-//   } catch (error) {
-//     console.error("Error sending WhatsApp message:", error);
-//   }
-// };
-
 const order = async (req, res) => {
   try {
     const { amt, name, phoneNumber, fatherName, pincode, city } = req.body;
@@ -449,20 +496,24 @@ const orderSuccess = async (req, res) => {
       remarks: "Payment verified successfully",
     });
 
-    // // Generate PDF invoice
-    // const invoiceDetails = {
-    //   name: userData.name,
-    //   city: userData.city,
-    //   phoneNumber: userData.phoneNumber,
-    //   amount: amount / 100, // Convert from paise to INR
-    //   orderId: razorpayOrderId,
-    //   transactionId: razorpayPaymentId,
-    // };
+    // Generate PDF Invoice
+    const invoiceDetails = {
+      name: userData.name,
+      city: userData.city,
+      phoneNumber: userData.phoneNumber,
+      amount: amount / 100,
+      orderId: razorpayOrderId,
+      transactionId: razorpayPaymentId,
+      invoiceDate: new Date().toISOString().split("T")[0],
+    };
 
-    // const pdfBuffer = await generatePdf(invoiceDetails); // Generate PDF
+    const pdfBuffer = await generatePdf(invoiceDetails);
 
-    // // Send the invoice to the user via WhatsApp
-    // await sendWhatsAppMessage(userData.phoneNumber, pdfBuffer);
+    // Upload PDF to WhatsApp
+    const mediaId = await uploadPdfToWhatsApp(pdfBuffer);
+
+    // Send WhatsApp Message with PDF
+    await sendWhatsAppPdf(userData.phoneNumber, mediaId);
 
     res.status(200).json({
       // Respond with success message

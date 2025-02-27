@@ -19,9 +19,9 @@ const generateReceiptId = () => {
 const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
   try {
     const formData = new FormData();
-    formData.append("file", pdfBuffer, "invoice.pdf");
-    formData.append("messaging_product", "whatsapp");
-    formData.append("type", "application/pdf");
+    formData.append('file', pdfBuffer, 'invoice.pdf');
+    formData.append('messaging_product', 'whatsapp');
+    formData.append('type', 'application/pdf');
 
     // Upload the PDF first to WhatsApp
     const uploadResponse = await axios.post(
@@ -30,49 +30,49 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
       {
         headers: {
           Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-          ...formData.getHeaders(),
+          ...formData.getHeaders(), // Ensure headers are properly set
         },
       }
     );
 
     const mediaId = uploadResponse.data.id;
-    console.log("Media ID:", mediaId);
+    console.log('Media ID:', mediaId);
 
     // Send template message with the mediaId as part of the header
     const messagePayload = {
-      messaging_product: "whatsapp",
+      messaging_product: 'whatsapp',
       to: phoneNumber,
-      type: "template",
+      type: 'template',
       template: {
-        name: "umrah_99_invoice",
+        name: 'umrah_99_invoice',
         language: {
-          code: "en",
+          code: 'en',
         },
         components: [
           {
-            type: "header",
+            type: 'header',
             parameters: [
               {
-                type: "document",
+                type: 'document',
                 document: {
                   id: mediaId, // Attach the media ID here
-                  filename: "Invoice.pdf",
+                  filename: 'Invoice.pdf',
                 },
               },
             ],
           },
           {
-            type: "button",
-            sub_type: "url",
+            type: 'button',
+            sub_type: 'url',
             index: 0,
             parameters: [
               {
-                type: "text",
-                text: "Download Invoice",
+                type: 'text',
+                text: 'Download Invoice',
               },
               {
-                type: "text",
-                text: "https://www.example.com/invoice.pdf", // The link for downloading the document
+                type: 'text',
+                text: 'https://www.example.com/invoice.pdf', // The link for downloading the document
               },
             ],
           },
@@ -87,17 +87,19 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
       {
         headers: {
           Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }
     );
 
-    console.log("WhatsApp Template Sent:", response.data);
+    console.log('WhatsApp Template Sent:', response.data);
   } catch (error) {
-    console.error("Error sending PDF via WhatsApp:", error.message);
-    throw new Error("Failed to send PDF via WhatsApp.");
+    console.error('Error sending PDF via WhatsApp:', error.message);
+    throw new Error('Failed to send PDF via WhatsApp.');
   }
 };
+
+
 
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {

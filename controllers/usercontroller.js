@@ -4,8 +4,6 @@ const crypto = require("crypto");
 const User = require("../models/user");
 const PaymentDetails = require("../models/payment-details");
 const axios = require("axios"); // For API requests
-const fs = require("fs"); // For handling files
-const path = require("path"); // For file paths
 const FormData = require("form-data"); // For file upload
 const puppeteer = require("puppeteer");
 const moment = require("moment");
@@ -18,26 +16,14 @@ const generateReceiptId = () => {
   return `receipt_umrahh_${randomNumbers}`;
 };
 
-// Upload the PDF to Meta's WhatsApp API and get a media ID
-const uploadPdfToWhatsApp = async (pdfBuffer) => {
+const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
   try {
-    // Define the path to the 'assets' folder at the root of your project
-    const filePath = path.join(__dirname, "..", "assets", "invoice.pdf");
-
-    // Create the 'assets' folder if it doesn't exist (optional)
-    const assetsDir = path.join(__dirname, "..", "assets");
-    if (!fs.existsSync(assetsDir)) {
-      fs.mkdirSync(assetsDir);
-    }
-
-    // Write the PDF buffer to the 'assets' folder
-    fs.writeFileSync(filePath, pdfBuffer);
-
     const formData = new FormData();
-    formData.append("file", fs.createReadStream(filePath));
+    formData.append("file", pdfBuffer, "invoice.pdf");
     formData.append("messaging_product", "whatsapp");
     formData.append("type", "application/pdf");
 
+    // Use the WhatsApp media endpoint to send the document directly
     const response = await axios.post(
       `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/media`,
       formData,
@@ -49,7 +35,7 @@ const uploadPdfToWhatsApp = async (pdfBuffer) => {
       }
     );
 
-    console.log("Media Uploaded:", response.data);
+    console.log("PDF sent to WhatsApp:", response.data);
     return response.data.id; // Media ID from WhatsApp
   } catch (error) {
     // Log detailed error information
@@ -57,47 +43,12 @@ const uploadPdfToWhatsApp = async (pdfBuffer) => {
       console.error("Error response from WhatsApp API:", error.response.data);
       console.error("HTTP Status Code:", error.response.status);
     } else {
-      console.error("Error uploading PDF to WhatsApp:", error.message);
+      console.error("Error sending PDF to WhatsApp:", error.message);
     }
 
-    throw new Error("Failed to upload PDF to WhatsApp.");
+    throw new Error("Failed to send PDF to WhatsApp.");
   }
 };
-
-// Send WhatsApp Message with the PDF
-const sendWhatsAppPdf = async (phoneNumber, mediaId) => {
-  try {
-    const payload = {
-      messaging_product: "whatsapp",
-      to: phoneNumber,
-      type: "document",
-      document: {
-        id: mediaId,
-        filename: "Invoice.pdf",
-      },
-    };
-
-    const response = await axios.post(
-      `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-        },
-      }
-    );
-
-    console.log("WhatsApp PDF Sent:", response.data);
-  } catch (error) {
-    console.error(
-      "Error sending WhatsApp PDF:",
-      error.response?.data || error.message
-    );
-    throw new Error("Failed to send WhatsApp message.");
-  }
-};
-
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {
   const {
@@ -489,8 +440,8 @@ const orderSuccess = async (req, res) => {
       where: { id: user },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "user not found" });
+    if (!userData) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     userData.paymentStatus = "paid";
@@ -522,20 +473,16 @@ const orderSuccess = async (req, res) => {
 
     const pdfBuffer = await generatePdf(invoiceDetails);
 
-    // Upload PDF to WhatsApp
-    const mediaId = await uploadPdfToWhatsApp(pdfBuffer);
-
-    // Send WhatsApp Message with PDF
-    await sendWhatsAppPdf(userData.phoneNumber, mediaId);
-
     res.status(200).json({
-      // Respond with success message
       msg: "Payment success",
       orderId: razorpayOrderId,
       paymentId: razorpayPaymentId,
       userId: userData.userId,
       paymentDetails: newPayment,
     });
+
+    sendWhatsAppPdf(userData.phoneNumber, pdfBuffer);
+
   } catch (error) {
     console.log(error);
     res

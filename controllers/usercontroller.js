@@ -52,10 +52,14 @@ const uploadPdfToWhatsApp = async (pdfBuffer) => {
     console.log("Media Uploaded:", response.data);
     return response.data.id; // Media ID from WhatsApp
   } catch (error) {
-    console.error(
-      "Error uploading PDF to WhatsApp:",
-      error.response?.data || error.message
-    );
+    // Log detailed error information
+    if (error.response) {
+      console.error("Error response from WhatsApp API:", error.response.data);
+      console.error("HTTP Status Code:", error.response.status);
+    } else {
+      console.error("Error uploading PDF to WhatsApp:", error.message);
+    }
+
     throw new Error("Failed to upload PDF to WhatsApp.");
   }
 };

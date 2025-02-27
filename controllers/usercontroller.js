@@ -19,6 +19,10 @@ const generateReceiptId = () => {
 
 const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
   try {
+    if (!Buffer.isBuffer(pdfBuffer)) {
+      throw new Error('pdfBuffer is not a valid Buffer');
+    }
+
     // Convert Buffer to a Readable Stream
     const pdfStream = Readable.from(pdfBuffer);
 
@@ -30,16 +34,17 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
     formData.append('messaging_product', 'whatsapp');
     formData.append('type', 'application/pdf');
 
+    // **Fix: Explicitly set headers**
+    const headers = {
+      Authorization: `Bearer ${META_ACCESS_TOKEN}`,
+      ...formData.getHeaders(),
+    };
+
     // Upload the PDF first to WhatsApp
     const uploadResponse = await axios.post(
       `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/media`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-          ...formData.getHeaders(), // Ensure headers are properly set
-        },
-      }
+      { headers } // Make sure headers are passed correctly
     );
 
     const mediaId = uploadResponse.data.id;
@@ -62,7 +67,7 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
               {
                 type: 'document',
                 document: {
-                  id: mediaId, // Attach the media ID here
+                  id: mediaId,
                   filename: 'Invoice.pdf',
                 },
               },

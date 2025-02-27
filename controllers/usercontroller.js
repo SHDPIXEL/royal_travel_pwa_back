@@ -23,8 +23,8 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
     formData.append("messaging_product", "whatsapp");
     formData.append("type", "application/pdf");
 
-    // Use the WhatsApp media endpoint to send the document directly
-    const response = await axios.post(
+    // Upload the PDF first to WhatsApp
+    const uploadResponse = await axios.post(
       `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/media`,
       formData,
       {
@@ -35,20 +35,70 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
       }
     );
 
-    console.log("PDF sent to WhatsApp:", response.data);
-    return response.data.id; // Media ID from WhatsApp
-  } catch (error) {
-    // Log detailed error information
-    if (error.response) {
-      console.error("Error response from WhatsApp API:", error.response.data);
-      console.error("HTTP Status Code:", error.response.status);
-    } else {
-      console.error("Error sending PDF to WhatsApp:", error.message);
-    }
+    const mediaId = uploadResponse.data.id;
+    console.log("Media ID:", mediaId);
 
-    throw new Error("Failed to send PDF to WhatsApp.");
+    // Send template message with the mediaId as part of the header
+    const messagePayload = {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "template",
+      template: {
+        name: "umrah_99_invoice",
+        language: {
+          code: "en",
+        },
+        components: [
+          {
+            type: "header",
+            parameters: [
+              {
+                type: "document",
+                document: {
+                  id: mediaId, // Attach the media ID here
+                  filename: "Invoice.pdf",
+                },
+              },
+            ],
+          },
+          {
+            type: "button",
+            sub_type: "url",
+            index: 0,
+            parameters: [
+              {
+                type: "text",
+                text: "Download Invoice",
+              },
+              {
+                type: "text",
+                text: "https://www.example.com/invoice.pdf", // The link for downloading the document
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    // Send the template message
+    const response = await axios.post(
+      `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      messagePayload,
+      {
+        headers: {
+          Authorization: `Bearer ${META_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("WhatsApp Template Sent:", response.data);
+  } catch (error) {
+    console.error("Error sending PDF via WhatsApp:", error.message);
+    throw new Error("Failed to send PDF via WhatsApp.");
   }
 };
+
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {
   const {

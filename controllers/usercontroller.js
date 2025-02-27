@@ -5,6 +5,7 @@ const User = require("../models/user");
 const PaymentDetails = require("../models/payment-details");
 const axios = require("axios"); // For API requests
 const FormData = require("form-data"); // For file upload
+const { Readable } = require('stream');
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 
@@ -18,8 +19,14 @@ const generateReceiptId = () => {
 
 const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
   try {
+    // Convert Buffer to a Readable Stream
+    const pdfStream = Readable.from(pdfBuffer);
+
     const formData = new FormData();
-    formData.append('file', pdfBuffer, 'invoice.pdf');
+    formData.append('file', pdfStream, {
+      filename: 'invoice.pdf',
+      contentType: 'application/pdf',
+    });
     formData.append('messaging_product', 'whatsapp');
     formData.append('type', 'application/pdf');
 
@@ -61,21 +68,6 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
               },
             ],
           },
-          {
-            type: 'button',
-            sub_type: 'url',
-            index: 0,
-            parameters: [
-              {
-                type: 'text',
-                text: 'Download Invoice',
-              },
-              {
-                type: 'text',
-                text: 'https://www.example.com/invoice.pdf', // The link for downloading the document
-              },
-            ],
-          },
         ],
       },
     };
@@ -94,7 +86,7 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
 
     console.log('WhatsApp Template Sent:', response.data);
   } catch (error) {
-    console.error('Error sending PDF via WhatsApp:', error.message);
+    console.error('Error sending PDF via WhatsApp:', error.response?.data || error.message);
     throw new Error('Failed to send PDF via WhatsApp.');
   }
 };

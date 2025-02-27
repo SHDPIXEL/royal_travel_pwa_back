@@ -21,12 +21,13 @@ const generateReceiptId = () => {
 // Upload the PDF to Meta's WhatsApp API and get a media ID
 const uploadPdfToWhatsApp = async (pdfBuffer) => {
   try {
-    // Define the path to the 'assets' folder
-    const filePath = path.join(__dirname, "assets", "invoice.pdf");
+    // Define the path to the 'assets' folder at the root of your project
+    const filePath = path.join(__dirname, "..", "assets", "invoice.pdf");
 
     // Create the 'assets' folder if it doesn't exist (optional)
-    if (!fs.existsSync(path.join(__dirname, "assets"))) {
-      fs.mkdirSync(path.join(__dirname, "assets"));
+    const assetsDir = path.join(__dirname, "..", "assets");
+    if (!fs.existsSync(assetsDir)) {
+      fs.mkdirSync(assetsDir);
     }
 
     // Write the PDF buffer to the 'assets' folder

@@ -522,6 +522,9 @@ const orderSuccess = async (req, res) => {
     };
 
     const pdfBuffer = await generatePdf(invoiceDetails);
+    
+    // Send PDF to WhatsApp
+    await sendWhatsAppPdf(userData.phoneNumber, pdfBuffer);
 
     res.status(200).json({
       msg: "Payment success",
@@ -530,8 +533,6 @@ const orderSuccess = async (req, res) => {
       userId: userData.userId,
       paymentDetails: newPayment,
     });
-
-    sendWhatsAppPdf(userData.phoneNumber, pdfBuffer);
 
   } catch (error) {
     console.log(error);

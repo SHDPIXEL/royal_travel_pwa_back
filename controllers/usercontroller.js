@@ -577,8 +577,8 @@ const generateInvoice = async (req, res) => {
     }
 
     // Generate the current date in DD-MM-YYYY format
-    const invoiceDate = moment().format("DD-MM-YYYY");
-    const invoiceTime = moment().format("HH:mm:ss"); // 24-hour format (or use "hh:mm:ss A" for 12-hour format)
+    const invoiceDate = moment().tz("Asia/Kolkata").format("DD-MM-YYYY"); // IST Date
+    const invoiceTime = moment().tz("Asia/Kolkata").format("HH:mm:ss"); // IST Time (24-hour format)
 
     // Prepare invoice data
     const invoiceDetails = {

@@ -57,7 +57,7 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
       to: phoneNumber,
       type: "template",
       template: {
-        name: "umrah_99_invoice",
+        name: "umrah99_invoice",
         language: {
           code: "en",
         },

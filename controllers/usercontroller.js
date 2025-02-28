@@ -5,7 +5,7 @@ const User = require("../models/user");
 const PaymentDetails = require("../models/payment-details");
 const axios = require("axios"); // For API requests
 const FormData = require("form-data"); // For file upload
-const { Readable } = require('stream');
+const { Readable } = require("stream");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 
@@ -19,20 +19,21 @@ const generateReceiptId = () => {
 
 const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
   try {
-    if (!Buffer.isBuffer(pdfBuffer)) {
-      throw new Error('pdfBuffer is not a valid Buffer');
+    if (!(pdfBuffer instanceof Buffer)) {
+      console.log("Converting Uint8Array to Buffer...");
+      pdfBuffer = Buffer.from(pdfBuffer);
     }
 
     // Convert Buffer to a Readable Stream
     const pdfStream = Readable.from(pdfBuffer);
 
     const formData = new FormData();
-    formData.append('file', pdfStream, {
-      filename: 'invoice.pdf',
-      contentType: 'application/pdf',
+    formData.append("file", pdfStream, {
+      filename: "invoice.pdf",
+      contentType: "application/pdf",
     });
-    formData.append('messaging_product', 'whatsapp');
-    formData.append('type', 'application/pdf');
+    formData.append("messaging_product", "whatsapp");
+    formData.append("type", "application/pdf");
 
     // **Fix: Explicitly set headers**
     const headers = {
@@ -48,28 +49,39 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
     );
 
     const mediaId = uploadResponse.data.id;
-    console.log('Media ID:', mediaId);
+    console.log("Media ID:", mediaId);
 
     // Send template message with the mediaId as part of the header
     const messagePayload = {
-      messaging_product: 'whatsapp',
+      messaging_product: "whatsapp",
       to: phoneNumber,
-      type: 'template',
+      type: "template",
       template: {
-        name: 'umrah_99_invoice',
+        name: "umrah_99_invoice",
         language: {
-          code: 'en',
+          code: "en",
         },
         components: [
           {
-            type: 'header',
+            type: "header",
             parameters: [
               {
-                type: 'document',
+                type: "document",
                 document: {
                   id: mediaId,
-                  filename: 'Invoice.pdf',
+                  filename: "Invoice.pdf",
                 },
+              },
+            ],
+          },
+          {
+            type: "button",
+            sub_type: "url",
+            index: 0,
+            parameters: [
+              {
+                type: "text",
+                text: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
               },
             ],
           },
@@ -84,19 +96,20 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
       {
         headers: {
           Authorization: `Bearer ${META_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
 
-    console.log('WhatsApp Template Sent:', response.data);
+    console.log("WhatsApp Template Sent:", response.data);
   } catch (error) {
-    console.error('Error sending PDF via WhatsApp:', error.response?.data || error.message);
-    throw new Error('Failed to send PDF via WhatsApp.');
+    console.error(
+      "Error sending PDF via WhatsApp:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to send PDF via WhatsApp.");
   }
 };
-
-
 
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {
@@ -108,6 +121,7 @@ const generatePdf = async (invoiceDetails) => {
     city,
     phoneNumber,
     invoiceDate,
+    invoiceTime,
   } = invoiceDetails;
 
   const htmlContent = `
@@ -307,7 +321,7 @@ const generatePdf = async (invoiceDetails) => {
                   </div>
 
                   <div class="invoice-info">
-                      <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
+                      <p><strong>Invoice Date:</strong> ${invoiceDate} ${invoiceTime}</p>
                       <p><strong>Order ID:</strong> <span class="badge">${orderId}</span></p>
                       <p><strong>Transaction ID:</strong> <span class="badge">${transactionId}</span></p>
                   </div>
@@ -517,13 +531,20 @@ const orderSuccess = async (req, res) => {
       amount: amount / 100,
       orderId: razorpayOrderId,
       transactionId: razorpayPaymentId,
-      invoiceDate: new Date().toISOString().split("T")[0],
+      invoiceDate: new Date().toISOString().split("T")[0].split("-").reverse().join("-"), // DD-MM-YYYY
+      invoiceTime: new Date().toLocaleTimeString("en-GB", { hour12: false }), // HH:MM:SS in local timezone
     };
 
     const pdfBuffer = await generatePdf(invoiceDetails);
-    
+    console.log("Type of pdfBuffer", typeof pdfBuffer);
+    console.log("IsBuffer", Buffer.isBuffer(pdfBuffer));
+    console.log("pdfBuffer Value", pdfBuffer);
+    const pdfBufferFixed = Buffer.from(pdfBuffer); // Convert Uint8Array to Buffer
     // Send PDF to WhatsApp
-    await sendWhatsAppPdf(userData.phoneNumber, pdfBuffer);
+    // Run sendWhatsAppPdf in the background without awaiting it
+    sendWhatsAppPdf(userData.phoneNumber, pdfBufferFixed)
+      .then(() => console.log("WhatsApp PDF sent successfully"))
+      .catch((err) => console.error("Error sending WhatsApp PDF:", err));
 
     res.status(200).json({
       msg: "Payment success",
@@ -532,7 +553,6 @@ const orderSuccess = async (req, res) => {
       userId: userData.userId,
       paymentDetails: newPayment,
     });
-
   } catch (error) {
     console.log(error);
     res
@@ -561,6 +581,7 @@ const generateInvoice = async (req, res) => {
 
     // Generate the current date in DD-MM-YYYY format
     const invoiceDate = moment().format("DD-MM-YYYY");
+    const invoiceTime = moment().format("HH:mm:ss"); // 24-hour format (or use "hh:mm:ss A" for 12-hour format)
 
     // Prepare invoice data
     const invoiceDetails = {
@@ -571,6 +592,7 @@ const generateInvoice = async (req, res) => {
       orderId: paymentDetails.orderId,
       transactionId: paymentDetails.transactionId,
       invoiceDate,
+      invoiceTime
     };
 
     // Generate PDF invoice

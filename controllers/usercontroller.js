@@ -74,17 +74,6 @@ const sendWhatsAppPdf = async (phoneNumber, pdfBuffer) => {
               },
             ],
           },
-          {
-            type: "button",
-            sub_type: "url",
-            index: 0,
-            parameters: [
-              {
-                type: "text",
-                text: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-              },
-            ],
-          },
         ],
       },
     };
@@ -531,8 +520,16 @@ const orderSuccess = async (req, res) => {
       amount: amount / 100,
       orderId: razorpayOrderId,
       transactionId: razorpayPaymentId,
-      invoiceDate: new Date().toISOString().split("T")[0].split("-").reverse().join("-"), // DD-MM-YYYY
-      invoiceTime: new Date().toLocaleTimeString("en-GB", { hour12: false }), // HH:MM:SS in local timezone
+      invoiceDate: new Date()
+        .toISOString()
+        .split("T")[0]
+        .split("-")
+        .reverse()
+        .join("-"), // DD-MM-YYYY
+      invoiceTime: new Date().toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Kolkata", // Change to your desired timezone
+        hour12: false,
+      }),
     };
 
     const pdfBuffer = await generatePdf(invoiceDetails);
@@ -592,7 +589,7 @@ const generateInvoice = async (req, res) => {
       orderId: paymentDetails.orderId,
       transactionId: paymentDetails.transactionId,
       invoiceDate,
-      invoiceTime
+      invoiceTime,
     };
 
     // Generate PDF invoice

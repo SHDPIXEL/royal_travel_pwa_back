@@ -514,6 +514,9 @@ const updateUserStatus = async (req, res) => {
     const { id } = req.params; // Get user ID from request parameters
     const { userStatus } = req.body; // Get new status from request body
 
+    console.log("Received ID:", id); // Debugging log
+    console.log("Received Status:", userStatus); // Debugging log
+
     // Ensure the status is valid
     const validStatuses = ["Active", "Inactive"];
     if (!validStatuses.includes(userStatus)) {
@@ -523,16 +526,15 @@ const updateUserStatus = async (req, res) => {
     // Find the user by ID
     const user = await User.findByPk(id);
 
-    // If user not found, return 404 response
     if (!user) {
+      console.log("User not found in DB"); // Debugging log
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update the user status
+    // Update user status
     user.userStatus = userStatus;
     await user.save();
 
-    // Send success response
     res.status(200).json({ message: "User status updated successfully.", user });
   } catch (error) {
     console.error(error);

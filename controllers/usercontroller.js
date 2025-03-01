@@ -348,7 +348,7 @@ const generatePdf = async (invoiceDetails) => {
               </div>
           </div>
                     <!-- Terms and Conditions Section -->
-          <div class="terms-section" style="margin-top: 10rem; padding-top: 1.5rem; border-top: 2px solid var(--border); font-size: 0.875rem; color: var(--text-secondary);">
+          <div class="terms-section" style="margin-top: 15rem; padding-top: 1.5rem; border-top: 2px solid var(--border); font-size: 0.875rem; color: var(--text-secondary);">
               <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;"><u>Umrah99 Terms and Conditions:</u></h3>
               <ul style="list-style-type: disc; padding-left: 1.5rem;">
                   <li>The number of participants in each Umrah99 lucky draw will depend on the total entries.</li>

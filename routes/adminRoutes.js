@@ -42,7 +42,7 @@ router.get("/payment-details/graph", getPaymentsGraph);
 //{users}
 // Route to get all paymentDetails
 router.get("/users", getAllUsers);
-router.delete("/updateuserstatus/:id", updateUserStatus);
+router.put("/updateuserstatus/:id", updateUserStatus);
 router.get("/user-details/graph", getUsersGraph);
 
 //{invoice}

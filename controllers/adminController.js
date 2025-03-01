@@ -508,9 +508,17 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
-const deleteUser = async (req, res) => {
+
+const updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params; // Get user ID from request parameters
+    const { userStatus } = req.body; // Get new status from request body
+
+    // Ensure the status is valid
+    const validStatuses = ["Active", "Inactive"];
+    if (!validStatuses.includes(userStatus)) {
+      return res.status(400).json({ message: "Invalid user status provided." });
+    }
 
     // Find the user by ID
     const user = await User.findByPk(id);
@@ -520,15 +528,16 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Delete the user
-    await user.destroy();
+    // Update the user status
+    user.userStatus = userStatus;
+    await user.save();
 
     // Send success response
-    res.status(200).json({ message: "User deleted successfully." });
+    res.status(200).json({ message: "User status updated successfully.", user });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: "An error occurred while deleting the user.",
+      message: "An error occurred while updating user status.",
       error: error.message,
     });
   }
@@ -648,7 +657,7 @@ module.exports = {
   getAllPayments, //{paymentDetails}
   getPaymentsGraph,
   getAllUsers, //{users}
-  deleteUser,
+  updateUserStatus,
   getUsersGraph,
   generateInvoice, //{invoice}
 };

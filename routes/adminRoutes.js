@@ -10,7 +10,7 @@ const {
   getAllPayments,//{paymentDetails}
   getPaymentsGraph,
   getAllUsers,//{users}
-  deleteUser,
+  updateUserStatus,
   getUsersGraph,
   generateInvoice,//{invoice}
 } = require("../controllers/adminController"); // Import the controller
@@ -42,7 +42,7 @@ router.get("/payment-details/graph", getPaymentsGraph);
 //{users}
 // Route to get all paymentDetails
 router.get("/users", getAllUsers);
-router.delete("/deleteusers/:id", deleteUser);
+router.delete("/updateuserstatus/:id", updateUserStatus);
 router.get("/user-details/graph", getUsersGraph);
 
 //{invoice}

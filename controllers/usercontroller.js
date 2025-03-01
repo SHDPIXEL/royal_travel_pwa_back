@@ -475,6 +475,7 @@ const order = async (req, res) => {
       amount: JSON.parse(amt),
       paymentStatus: "pending", // Default to pending
       status: "pending", // Default to pending
+      userStatus:"Active"
     });
 
     res.status(201).json({

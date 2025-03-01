@@ -46,6 +46,11 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    userStatus: {
+      type: DataTypes.ENUM("Active", "Inactive"),
+      allowNull: false,
+      defaultValue:"Active"
+    },
     status: {
       type: DataTypes.ENUM("confirmed", "canceled", "pending"),
       allowNull: false,

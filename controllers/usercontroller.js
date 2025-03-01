@@ -445,7 +445,7 @@ const order = async (req, res) => {
     // Razorpay instance setup
     const instance = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID_s,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
+      key_secret: process.env.RAZORPAY_KEY_SECRET_s,
     });
 
     const receiptId = generateReceiptId();

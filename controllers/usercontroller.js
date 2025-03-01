@@ -348,6 +348,28 @@ const generatePdf = async (invoiceDetails) => {
                   <span>₹${amount}</span>
               </div>
           </div>
+                    <!-- Terms and Conditions Section -->
+          <div class="terms-section" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border); font-size: 0.875rem; color: var(--text-secondary);">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;"><u>Umrah99 Terms and Conditions:</u></h3>
+              <ul style="list-style-type: disc; padding-left: 1.5rem;">
+                  <li>The number of participants in each Umrah99 lucky draw will depend on the total entries.</li>
+                  <li>If you wish to request a refund after making a payment, you must claim it within 24 hours. After this period, no claims will be accepted, and the participant will no longer be part of the Umrah99 competition.</li>
+                  <li>Umrah99 reserves all rights.</li>
+                  <li>Umrah99 is a part of Royal Groups.</li>
+              </ul>
+              
+              <!-- Contact Information -->
+              <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="fas fa-phone" style="color: var(--primary);"></i>
+                      <a href="tel:+917300500939" style="text-decoration: none; color: var(--text-primary);">+91 73005 00939</a> <!-- Replace with actual phone number -->
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="fas fa-envelope" style="color: var(--primary);"></i>
+                      <a href="mailto:info@umrah99.in" style="text-decoration: none; color: var(--text-primary);">info@umrah99.in</a> <!-- Replace with actual email -->
+                  </div>
+              </div>
+          </div>
       </div>
   </body>
   </html>

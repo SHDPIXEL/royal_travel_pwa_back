@@ -508,6 +508,31 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params; // Get user ID from request parameters
+
+    // Find the user by ID
+    const user = await User.findByPk(id);
+
+    // If user not found, return 404 response
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Delete the user
+    await user.destroy();
+
+    // Send success response
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "An error occurred while deleting the user.",
+      error: error.message,
+    });
+  }
+};
 
 //{usersGraph}
 async function getUsersGraph(req, res) {
@@ -623,6 +648,7 @@ module.exports = {
   getAllPayments, //{paymentDetails}
   getPaymentsGraph,
   getAllUsers, //{users}
+  deleteUser,
   getUsersGraph,
   generateInvoice, //{invoice}
 };

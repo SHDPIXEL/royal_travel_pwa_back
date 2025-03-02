@@ -15,6 +15,7 @@ const generatePdf = async (invoiceDetails) => {
     city,
     phoneNumber,
     invoiceDate,
+    invoiceTime,
   } = invoiceDetails;
 
   const htmlContent = `
@@ -200,8 +201,7 @@ const generatePdf = async (invoiceDetails) => {
               <!-- Logo Section -->
               <div class="logo-section">
                   <div>
-                      <h2 style="font-weight: 600;">Royal <br></h2>
-                      <span style="font-weight: 600;">Hajj & Umrah</span>
+                      <img src="https://demo.shdpixel.com/umrah99/logo.jpg" alt="Umrah99 Logo" style="max-width: 150px; height: auto;">
                   </div>
               </div>
 
@@ -214,7 +214,7 @@ const generatePdf = async (invoiceDetails) => {
                   </div>
 
                   <div class="invoice-info">
-                      <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
+                      <p><strong>Invoice Date:</strong> ${invoiceDate} ${invoiceTime}</p>
                       <p><strong>Order ID:</strong> <span class="badge">${orderId}</span></p>
                       <p><strong>Transaction ID:</strong> <span class="badge">${transactionId}</span></p>
                   </div>
@@ -250,6 +250,28 @@ const generatePdf = async (invoiceDetails) => {
               <div class="total-row final">
                   <span class="total-label">Total Paid Amount</span>
                   <span>₹${amount}</span>
+              </div>
+          </div>
+                    <!-- Terms and Conditions Section -->
+          <div class="terms-section" style="margin-top: 15rem; padding-top: 1.5rem; border-top: 2px solid var(--border); font-size: 0.875rem; color: var(--text-secondary);">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;"><u>Umrah99 Terms and Conditions:</u></h3>
+              <ul style="list-style-type: disc; padding-left: 1.5rem;">
+                  <li>The number of participants in each Umrah99 lucky draw will depend on the total entries.</li>
+                  <li>If you wish to request a refund after making a payment, you must claim it within 24 hours. After this period, no claims will be accepted, and the participant will no longer be part of the Umrah99 competition.</li>
+                  <li>Umrah99 reserves all rights.</li>
+                  <li>Umrah99 is a part of Royal Groups.</li>
+              </ul>
+              
+              <!-- Contact Information -->
+              <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="fas fa-phone" style="color: var(--primary);"></i>
+                      <a href="tel:+917300500939" style="text-decoration: none; color: var(--text-primary);">+91 73005 00939</a> <!-- Replace with actual phone number -->
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <i class="fas fa-envelope" style="color: var(--primary);"></i>
+                      <a href="mailto:info@umrah99.in" style="text-decoration: none; color: var(--text-primary);">info@umrah99.in</a> <!-- Replace with actual email -->
+                  </div>
               </div>
           </div>
       </div>
@@ -535,7 +557,9 @@ const updateUserStatus = async (req, res) => {
     user.userStatus = userStatus;
     await user.save();
 
-    res.status(200).json({ message: "User status updated successfully.", user });
+    res
+      .status(200)
+      .json({ message: "User status updated successfully.", user });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -611,7 +635,8 @@ const generateInvoice = async (req, res) => {
     }
 
     // Generate the current date in DD-MM-YYYY format
-    const invoiceDate = moment().format("DD-MM-YYYY");
+    const invoiceDate = moment().tz("Asia/Kolkata").format("DD-MM-YYYY"); // IST Date
+    const invoiceTime = moment().tz("Asia/Kolkata").format("HH:mm:ss"); // IST Time (24-hour format)
 
     // Prepare invoice data
     const invoiceDetails = {
@@ -622,6 +647,7 @@ const generateInvoice = async (req, res) => {
       orderId: paymentDetails.orderId,
       transactionId: paymentDetails.transactionId,
       invoiceDate,
+      invoiceTime,
     };
 
     // Generate PDF invoice

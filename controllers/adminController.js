@@ -4,6 +4,7 @@ const User = require("../models/user");
 const { Op } = require("sequelize");
 const moment = require("moment");
 const puppeteer = require("puppeteer");
+const axios = require("axios");
 
 // // Generate PDF Invoice
 const generatePdf = async (invoiceDetails) => {
@@ -304,6 +305,45 @@ const generatePdf = async (invoiceDetails) => {
   } catch (error) {
     console.error("Error generating PDF:", error);
     throw new Error("Failed to generate PDF");
+  }
+};
+
+const sendWhatsAppMessage = async (phone, name) => {
+  const ACCESS_TOKEN = "YOUR_WHATSAPP_ACCESS_TOKEN";
+
+  const messageData = {
+    messaging_product: "whatsapp",
+    to: phone,
+    type: "template",
+    template: {
+      name: umrah99_winnermessage,
+      language: { code: "en" },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: name } // Winner's Name
+          ]
+        }
+      ]
+    }
+  };
+
+  try {
+    const response = await axios.post(
+      "https://graph.facebook.com/v22.0/593691093825849/messages",
+      messageData,
+      {
+        headers: {
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("WhatsApp message sent successfully:", response.data);
+  } catch (error) {
+    console.error("Error sending WhatsApp message:", error.response.data);
   }
 };
 
@@ -676,6 +716,63 @@ const generateInvoice = async (req, res) => {
   }
 };
 
+//{randomWinnerGeneration}
+const selectRandomWinner = async (req, res) => {
+  try {
+    // Fetch successful payments with user details
+    const successfulPayments = await PaymentDetails.findAll({
+      where: { status: "success" },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "name", "phone"],
+        },
+      ],
+    });
+
+    if (successfulPayments.length === 0) {
+      return res.status(404).json({ message: "No successful payments found." });
+    }
+
+    // Randomly select one winner
+    const winner = successfulPayments[Math.floor(Math.random() * successfulPayments.length)];
+
+    // Save only `name` and `date` in UmrahhWinner
+    const savedWinner = await UmrahhWinner.create({
+      name: winner.User.name,
+      date: new Date(), // Save the current date
+    });
+
+    return res.json({
+      message: "Winner selected successfully and saved!",
+      winner: {
+        id: savedWinner.id,
+        name: savedWinner.name,
+        date: savedWinner.date,
+        phone: winner.User.phone, // Include phone number inside winner object
+      },
+    });
+  } catch (error) {
+    console.error("Error selecting winner:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const sendMessageToWinner = async (req, res) => {
+  const { phone, name } = req.body; // Get details from the request
+
+  if (!phone || !name) {
+    return res.status(400).json({ message: "Phone number and name are required." });
+  }
+
+  try {
+    await sendWhatsAppMessage(phone, name);
+    return res.json({ message: "WhatsApp message sent successfully!" });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to send WhatsApp message." });
+  }
+};
+
 module.exports = {
   createUmrahhWinner, //{UmrahhWinner}
   getAllUmrahhWinners,
@@ -688,4 +785,6 @@ module.exports = {
   updateUserStatus,
   getUsersGraph,
   generateInvoice, //{invoice}
+  selectRandomWinner,//{winner's}
+  sendMessageToWinner,
 };

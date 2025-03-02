@@ -404,18 +404,14 @@ const generatePdf = async (invoiceDetails) => {
 
 const order = async (req, res) => {
   try {
-    const { amt, name, phoneNumber, fatherName, pincode, city } = req.body;
+    const { amt, phoneNumber } = req.body;
 
     // Validate required fields
-    if (!name || !phoneNumber || !amt || !city) {
+    if (!phoneNumber || !amt) {
       return res.status(400).json({
         message: "Missing required fields",
-        name,
         phoneNumber,
-        fatherName,
-        pincode,
         amt,
-        city,
       });
     }
 
@@ -464,23 +460,9 @@ const order = async (req, res) => {
         .send("Some error occurred while creating the order.");
     }
 
-    // Create booking details
-    const newUser = await User.create({
-      name,
-      phoneNumber,
-      fatherName,
-      pincode,
-      city,
-      amount: JSON.parse(amt),
-      paymentStatus: "pending", // Default to pending
-      status: "pending", // Default to pending
-      userStatus: "Active",
-    });
-
     res.status(201).json({
       message: "Order created successfully",
       razorpayOrder,
-      userDetails: newUser, // Or the saved booking data
     });
   } catch (error) {
     console.log(error);
@@ -495,7 +477,11 @@ const orderSuccess = async (req, res) => {
       razorpayPaymentId,
       razorpayOrderId,
       razorpaySignature,
-      user,
+      name,
+      phoneNumber,
+      fatherName,
+      pincode,
+      city,
       amount,
     } = req.body;
 
@@ -509,15 +495,25 @@ const orderSuccess = async (req, res) => {
       return res.status(400).json({ msg: "Transaction not legit!" });
     }
 
-    // Update the booking status and payment status in the database
-    const userData = await User.findOne({
-      where: { id: user },
-    });
+    // Check if user already exists (to prevent duplicate user creation)
+    let userData = await User.findOne({ where: { phoneNumber } });
 
     if (!userData) {
-      return res.status(404).json({ message: "User not found" });
+      // Create user only if not found
+      userData = await User.create({
+        name,
+        phoneNumber,
+        fatherName,
+        pincode,
+        city,
+        amount: JSON.parse(amount),
+        paymentStatus: "pending", // Initially pending, updated after payment success
+        status: "pending",
+        userStatus: "Active",
+      });
     }
 
+    // Update user payment status
     userData.paymentStatus = "paid";
     userData.status = "confirmed";
 

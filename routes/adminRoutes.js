@@ -13,6 +13,8 @@ const {
   updateUserStatus,
   getUsersGraph,
   generateInvoice,//{invoice}
+  selectRandomWinner,//{winner's}
+  sendMessageToWinner,
 } = require("../controllers/adminController"); // Import the controller
 
 router.use(verifyAdminToken);
@@ -48,6 +50,12 @@ router.get("/user-details/graph", getUsersGraph);
 //{invoice}
 //download invoice
 router.get("/invoice/:orderId", generateInvoice); // New invoice API
+
+//{winner's}
+// Route to select a random winner
+router.post("/select-winner", selectRandomWinner);
+// Route to send a WhatsApp message to the winner
+router.post("/send-whatsapp", sendMessageToWinner);
 
 
 module.exports = router;

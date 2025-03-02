@@ -565,7 +565,7 @@ const orderSuccess = async (req, res) => {
       msg: "Payment success",
       orderId: razorpayOrderId,
       paymentId: razorpayPaymentId,
-      userId: userData.userId,
+      userId: userData.id,
       paymentDetails: newPayment,
     });
   } catch (error) {

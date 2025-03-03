@@ -1,6 +1,5 @@
 const UmrahhWinner = require("../models/umrahhWinners"); // Import the UmrahhWinner model
-const PaymentDetails = require("../models/payment-details"); // Adjust the path to your model
-const User = require("../models/user");
+const { User, PaymentDetails } = require("../models/index"); // Import models properly
 const { Op } = require("sequelize");
 const moment = require("moment");
 const puppeteer = require("puppeteer");
@@ -725,7 +724,8 @@ const selectRandomWinner = async (req, res) => {
       include: [
         {
           model: User,
-          attributes: ["id", "name", "phone"],
+          as: "user", // Use the alias you defined in associations
+          attributes: ["id", "name", "phoneNumber"], // Ensure correct field name
         },
       ],
     });
@@ -739,8 +739,8 @@ const selectRandomWinner = async (req, res) => {
 
     // Save only `name` and `date` in UmrahhWinner
     const savedWinner = await UmrahhWinner.create({
-      name: winner.User.name,
-      date: new Date(), // Save the current date
+      name: winner.user.name, // Use 'user' instead of 'User'
+      date: new Date(),
     });
 
     return res.json({
@@ -749,7 +749,7 @@ const selectRandomWinner = async (req, res) => {
         id: savedWinner.id,
         name: savedWinner.name,
         date: savedWinner.date,
-        phone: winner.User.phone, // Include phone number inside winner object
+        phone: winner.user.phoneNumber, // Ensure correct field name
       },
     });
   } catch (error) {

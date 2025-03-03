@@ -490,7 +490,7 @@ const order = async (req, res) => {
           `User with ID ${newUser.id} was removed due to pending status.`
         );
       }
-    }, 10 * 60 * 1000); // 10-minute delay before checking status
+    }, 2 * 60 * 1000); // 10-minute delay before checking status
 
     res.status(201).json({
       message: "Order created successfully",

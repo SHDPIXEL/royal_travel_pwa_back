@@ -404,14 +404,26 @@ const generatePdf = async (invoiceDetails) => {
 
 const order = async (req, res) => {
   try {
-    const { amt, phoneNumber } = req.body;
+    const { amt, name, phoneNumber, fatherName, pincode, city } = req.body;
 
     // Validate required fields
-    if (!phoneNumber || !amt) {
+    if (!name || !phoneNumber || !amt || !city) {
       return res.status(400).json({
         message: "Missing required fields",
+        name,
         phoneNumber,
+        fatherName,
+        pincode,
         amt,
+        city,
+      });
+    }
+
+    // Validate pincode (must be exactly 6 digits)
+    const pincodeRegex = /^\d{6}$/;
+    if (pincode && !pincodeRegex.test(pincode)) {
+      return res.status(400).json({
+        message: "Invalid pincode. It should be exactly 6 digits.",
       });
     }
 
@@ -444,20 +456,48 @@ const order = async (req, res) => {
       receipt: receiptId,
     };
 
+    // Create booking details first
+    const newUser = await User.create({
+      name,
+      phoneNumber,
+      fatherName,
+      pincode,
+      city,
+      amount: JSON.parse(amt),
+      paymentStatus: "pending", // Default to pending
+      status: "pending", // Default to pending
+      userStatus: "Active",
+    });
+
+    // Create the Razorpay order
     const razorpayOrder = await instance.orders.create(options);
 
     if (!razorpayOrder) {
+      // If order creation fails, delete the user data
+      await User.destroy({ where: { id: newUser.id } });
+
       return res
         .status(500)
-        .send("Some error occurred while creating the order.");
+        .json({ message: "Some error occurred while creating the order." });
     }
 
     res.status(201).json({
       message: "Order created successfully",
       razorpayOrder,
+      userDetails: newUser,
     });
   } catch (error) {
     console.log(error);
+
+    // If there's an error, ensure pending users are removed
+    await User.destroy({
+      where: {
+        phoneNumber: req.body.phoneNumber,
+        paymentStatus: "pending",
+        status: "pending",
+      },
+    });
+
     res.status(500).send(error.message || "An error occurred.");
   }
 };
@@ -469,21 +509,9 @@ const orderSuccess = async (req, res) => {
       razorpayPaymentId,
       razorpayOrderId,
       razorpaySignature,
-      name,
-      phoneNumber,
-      fatherName,
-      pincode,
-      city,
+      user,
       amount,
     } = req.body;
-
-    // Validate pincode (must be exactly 6 digits)
-    const pincodeRegex = /^\d{6}$/;
-    if (pincode && !pincodeRegex.test(pincode)) {
-      return res.status(400).json({
-        message: "Invalid pincode. It should be exactly 6 digits.",
-      });
-    }
 
     // Creating our own digest for verification
     const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
@@ -495,25 +523,15 @@ const orderSuccess = async (req, res) => {
       return res.status(400).json({ msg: "Transaction not legit!" });
     }
 
-    // Check if user already exists (to prevent duplicate user creation)
-    let userData = await User.findOne({ where: { phoneNumber } });
+    // Update the booking status and payment status in the database
+    const userData = await User.findOne({
+      where: { id: user },
+    });
 
     if (!userData) {
-      // Create user only if not found
-      userData = await User.create({
-        name,
-        phoneNumber,
-        fatherName,
-        pincode,
-        city,
-        amount: JSON.parse(amount),
-        paymentStatus: "pending", // Initially pending, updated after payment success
-        status: "pending",
-        userStatus: "Active",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Update user payment status
     userData.paymentStatus = "paid";
     userData.status = "confirmed";
 
@@ -565,7 +583,7 @@ const orderSuccess = async (req, res) => {
       msg: "Payment success",
       orderId: razorpayOrderId,
       paymentId: razorpayPaymentId,
-      userId: userData.id,
+      userId: userData.userId,
       paymentDetails: newPayment,
     });
   } catch (error) {

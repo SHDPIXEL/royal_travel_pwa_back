@@ -415,14 +415,6 @@ const order = async (req, res) => {
       });
     }
 
-    // Validate pincode (must be exactly 6 digits)
-    const pincodeRegex = /^\d{6}$/;
-    if (pincode && !pincodeRegex.test(pincode)) {
-      return res.status(400).json({
-        message: "Invalid pincode. It should be exactly 6 digits.",
-      });
-    }
-
     // Check if phone number already exists with "paid" and "confirmed" status
     const existingUser = await User.findOne({
       where: {
@@ -484,6 +476,14 @@ const orderSuccess = async (req, res) => {
       city,
       amount,
     } = req.body;
+
+    // Validate pincode (must be exactly 6 digits)
+    const pincodeRegex = /^\d{6}$/;
+    if (pincode && !pincodeRegex.test(pincode)) {
+      return res.status(400).json({
+        message: "Invalid pincode. It should be exactly 6 digits.",
+      });
+    }
 
     // Creating our own digest for verification
     const shasum = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);

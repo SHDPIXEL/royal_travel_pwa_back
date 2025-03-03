@@ -451,7 +451,7 @@ const order = async (req, res) => {
     const receiptId = generateReceiptId();
 
     const options = {
-      amount: amt * 100, // amount in smallest currency unit (Paise for INR)
+      amount: Number(amt) * 100, // Convert to paise
       currency: "INR",
       receipt: receiptId,
     };
@@ -470,33 +470,44 @@ const order = async (req, res) => {
     });
 
     // Create the Razorpay order
-    const razorpayOrder = await instance.orders.create(options);
+    try {
+      const razorpayOrder = await instance.orders.create(options);
 
-    if (!razorpayOrder) {
-      // If order creation fails, delete the user data
+      if (!razorpayOrder) {
+        throw new Error("Failed to create Razorpay order.");
+      }
+
+      res.status(201).json({
+        message: "Order created successfully",
+        razorpayOrder,
+        userDetails: newUser,
+      });
+    } catch (razorpayError) {
+      console.error("Razorpay Error:", razorpayError);
+
+      // Delete the user if payment order fails
       await User.destroy({ where: { id: newUser.id } });
 
-      return res
-        .status(500)
-        .json({ message: "Some error occurred while creating the order." });
+      return res.status(500).json({
+        message: "Failed to create Razorpay order.",
+        error: razorpayError.message || razorpayError,
+      });
     }
-
-    res.status(201).json({
-      message: "Order created successfully",
-      razorpayOrder,
-      userDetails: newUser,
-    });
   } catch (error) {
-    console.log(error);
+    console.error("Server Error:", error);
 
-    // If there's an error, ensure pending users are removed
-    await User.destroy({
-      where: {
-        phoneNumber: req.body.phoneNumber,
-        paymentStatus: "pending",
-        status: "pending",
-      },
-    });
+    // Ensure pending users are removed if there's an error
+    try {
+      await User.destroy({
+        where: {
+          phoneNumber: req.body.phoneNumber,
+          paymentStatus: "pending",
+          status: "pending",
+        },
+      });
+    } catch (deleteError) {
+      console.error("Failed to delete pending user:", deleteError);
+    }
 
     res.status(500).send(error.message || "An error occurred.");
   }

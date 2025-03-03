@@ -477,6 +477,21 @@ const order = async (req, res) => {
       userStatus: "Active",
     });
 
+    // Check if paymentStatus and status are still pending, then destroy the user
+    setTimeout(async () => {
+      const checkUser = await User.findByPk(newUser.id);
+      if (
+        checkUser &&
+        checkUser.paymentStatus === "pending" &&
+        checkUser.status === "pending"
+      ) {
+        await checkUser.destroy();
+        console.log(
+          `User with ID ${newUser.id} was removed due to pending status.`
+        );
+      }
+    }, 10 * 60 * 1000); // 10-minute delay before checking status
+
     res.status(201).json({
       message: "Order created successfully",
       razorpayOrder,

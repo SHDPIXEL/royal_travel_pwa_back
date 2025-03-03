@@ -481,7 +481,7 @@ const getAllPayments = async (req, res) => {
 
     // If no payment details found, return an appropriate message
     if (paymentDetails.length === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         message: "No payment details found.",
       });
     }
@@ -553,7 +553,7 @@ const getAllUsers = async (req, res) => {
 
     // If there are no users, send a message indicating that
     if (users.length === 0) {
-      return res.status(404).json({ message: "No users found." });
+      return res.status(200).json({ message: "No users found." });
     }
 
     // Send the list of users as a response

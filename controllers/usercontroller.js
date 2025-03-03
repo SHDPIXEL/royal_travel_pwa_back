@@ -451,12 +451,20 @@ const order = async (req, res) => {
     const receiptId = generateReceiptId();
 
     const options = {
-      amount: Number(amt) * 100, // Convert to paise
+      amount: amt * 100, // amount in smallest currency unit (Paise for INR)
       currency: "INR",
       receipt: receiptId,
     };
 
-    // Create booking details first
+    const razorpayOrder = await instance.orders.create(options);
+
+    if (!razorpayOrder) {
+      return res
+        .status(500)
+        .send("Some error occurred while creating the order.");
+    }
+
+    // Create booking details
     const newUser = await User.create({
       name,
       phoneNumber,
@@ -469,46 +477,13 @@ const order = async (req, res) => {
       userStatus: "Active",
     });
 
-    // Create the Razorpay order
-    try {
-      const razorpayOrder = await instance.orders.create(options);
-
-      if (!razorpayOrder) {
-        throw new Error("Failed to create Razorpay order.");
-      }
-
-      res.status(201).json({
-        message: "Order created successfully",
-        razorpayOrder,
-        userDetails: newUser,
-      });
-    } catch (razorpayError) {
-      console.error("Razorpay Error:", razorpayError);
-
-      // Delete the user if payment order fails
-      await User.destroy({ where: { id: newUser.id } });
-
-      return res.status(500).json({
-        message: "Failed to create Razorpay order.",
-        error: razorpayError.message || razorpayError,
-      });
-    }
+    res.status(201).json({
+      message: "Order created successfully",
+      razorpayOrder,
+      userDetails: newUser, // Or the saved booking data
+    });
   } catch (error) {
-    console.error("Server Error:", error);
-
-    // Ensure pending users are removed if there's an error
-    try {
-      await User.destroy({
-        where: {
-          phoneNumber: req.body.phoneNumber,
-          paymentStatus: "pending",
-          status: "pending",
-        },
-      });
-    } catch (deleteError) {
-      console.error("Failed to delete pending user:", deleteError);
-    }
-
+    console.log(error);
     res.status(500).send(error.message || "An error occurred.");
   }
 };

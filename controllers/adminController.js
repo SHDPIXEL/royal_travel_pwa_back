@@ -724,8 +724,8 @@ const selectRandomWinner = async (req, res) => {
       include: [
         {
           model: User,
-          as: "user", // Use the alias you defined in associations
-          attributes: ["id", "name", "phoneNumber"], // Ensure correct field name
+          as: "user",
+          attributes: ["id", "name", "phoneNumber"],
         },
       ],
     });
@@ -734,12 +734,28 @@ const selectRandomWinner = async (req, res) => {
       return res.status(404).json({ message: "No successful payments found." });
     }
 
+    // Filter out users who have already been selected as winners
+    const previousWinners = await UmrahhWinner.findAll({
+      attributes: ["name"], // Fetch only winner names
+    });
+
+    const previousWinnerNames = previousWinners.map((winner) => winner.name);
+    
+    // Get eligible users who haven't won before
+    const eligiblePayments = successfulPayments.filter(
+      (payment) => !previousWinnerNames.includes(payment.user.name)
+    );
+
+    if (eligiblePayments.length === 0) {
+      return res.status(400).json({ message: "All eligible users have already won." });
+    }
+
     // Randomly select one winner
-    const winner = successfulPayments[Math.floor(Math.random() * successfulPayments.length)];
+    const winner = eligiblePayments[Math.floor(Math.random() * eligiblePayments.length)];
 
     // Save only `name` and `date` in UmrahhWinner
     const savedWinner = await UmrahhWinner.create({
-      name: winner.user.name, // Use 'user' instead of 'User'
+      name: winner.user.name,
       date: new Date(),
     });
 
@@ -749,7 +765,7 @@ const selectRandomWinner = async (req, res) => {
         id: savedWinner.id,
         name: savedWinner.name,
         date: savedWinner.date,
-        phone: winner.user.phoneNumber, // Ensure correct field name
+        phone: winner.user.phoneNumber,
       },
     });
   } catch (error) {
